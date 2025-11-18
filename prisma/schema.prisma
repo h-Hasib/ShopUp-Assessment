@@ -1,0 +1,49 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id      String   @id @default(uuid())
+  email   String   @unique
+  name    String
+  coupons Coupon[]
+}
+
+model Coupon {
+  id             String    @id @default(uuid())
+  code           String    @unique
+  type           String    // "USER_SPECIFIC" | "TIME_SPECIFIC"
+  discountType   String    // "percentage" | "fixed"
+  value          Float
+  maxUsage       Int?      // Only for TIME_SPECIFIC
+  usageCount     Int       @default(0)
+  expiresAt      DateTime?
+  userId         String?   // Only for USER_SPECIFIC
+  user           User?     @relation(fields: [userId], references: [id])
+  isUsed         Boolean   @default(false) // Only for USER_SPECIFIC
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  logs           CouponUsageLog[]
+}
+
+model CouponUsageLog {
+  id         String   @id @default(uuid())
+  couponId   String
+  coupon     Coupon   @relation(fields: [couponId], references: [id])
+  userId     String?
+  redeemedAt DateTime @default(now())
+  success    Boolean
+  reason     String?
+}
